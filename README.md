@@ -103,33 +103,33 @@
 
 ```mermaid
 usecaseDiagram
-    actor "Неавторизованный пользователь" as Guest
-    actor "Авторизованный пользователь" as User
-    actor "Участник клуба" as Member
-    actor "Администратор клуба" as Owner
+    actor "Guest" as G
+    actor "User" as U
+    actor "Member" as M
+    actor "Owner" as O
 
-    rectangle "Платформа клубов (MVP)" {
-        usecase "Поиск клуба по названию" as UC1
-        usecase "Просмотр публичного клуба" as UC2
-        usecase "Регистрация / Авторизация" as UC3
-        usecase "Вступление в публичный клуб" as UC4
-        usecase "Создание нового клуба" as UC5
-        usecase "Управление настройками клуба" as UC6
-        usecase "Создание постов/обсуждений" as UC7
+    rectangle "Platform MVP" {
+        usecase "Search Club" as UC1
+        usecase "View Public Club" as UC2
+        usecase "Register/Login" as UC3
+        usecase "Join Club" as UC4
+        usecase "Create Club" as UC5
+        usecase "Manage Club Settings" as UC6
+        usecase "Create Posts/Discussions" as UC7
     }
 
-    Guest --> UC1
-    Guest --> UC2
-    Guest --> UC3
+    G --> UC1
+    G --> UC2
+    G --> UC3
     
-    User --> UC1
-    User --> UC2
-    User --> UC4
-    User --> UC5
+    U --> UC1
+    U --> UC2
+    U --> UC4
+    U --> UC5
     
-    Member --> UC7
+    M --> UC7
     
-    Owner --> UC6
-    Owner --> UC7
+    O --> UC6
+    O --> UC7
     
-    UC4 .> UC3 : include (если не авторизован)
+    UC4 ..> UC3 : include
