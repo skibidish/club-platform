@@ -102,21 +102,21 @@
 ## Часть 4. Диаграмма вариантов использования (Use Case)
 
 ```mermaid
-usecaseDiagram
-    actor "Guest" as G
-    actor "User" as U
-    actor "Member" as M
-    actor "Owner" as O
+flowchart TD
+    subgraph "Платформа клубов (MVP)"
+        UC1["Поиск клуба по названию"]
+        UC2["Просмотр публичного клуба"]
+        UC3["Регистрация / Авторизация"]
+        UC4["Вступление в публичный клуб"]
+        UC5["Создание нового клуба"]
+        UC6["Управление настройками клуба"]
+        UC7["Создание постов/обсуждений"]
+    end
 
-    rectangle "Platform MVP" {
-        usecase "Search Club" as UC1
-        usecase "View Public Club" as UC2
-        usecase "Register/Login" as UC3
-        usecase "Join Club" as UC4
-        usecase "Create Club" as UC5
-        usecase "Manage Club Settings" as UC6
-        usecase "Create Posts/Discussions" as UC7
-    }
+    G(("Неавторизованный<br>пользователь"))
+    U(("Авторизованный<br>пользователь"))
+    M(("Участник<br>клуба"))
+    O(("Администратор<br>клуба"))
 
     G --> UC1
     G --> UC2
@@ -132,4 +132,4 @@ usecaseDiagram
     O --> UC6
     O --> UC7
     
-    UC4 ..> UC3 : include
+    UC4 -. "включает" .-> UC3
