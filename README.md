@@ -59,7 +59,7 @@
 | **Создание нового клуба** | ❌ | ✅ | ✅ | ✅ |
 | **Редактирование настроек клуба** | ❌ | ❌ | ❌ | ✅ *(только своего)* |
 | **Создание поста/обсуждения** | ❌ | ❌ | ✅ *(в своих клубах)* | ✅ *(в своих клубах)* |
-| **Удаление участника из клуба** | ❌ |  | ❌ | ✅ *(только своего)* |
+| **Удаление участника из клуба** | ❌ | ❌ | ❌ | ✅ *(только своего)* |
 
 ---
 
@@ -99,7 +99,58 @@
 
 ---
 
-## Часть 4. Диаграмма вариантов использования (Use Case)
+## Часть 4. Cписок сущностей
+
+| User
+id
+display_name
+login
+email
+password_hash
+reg_at | Club
+id
+user_id
+name
+topic
+description
+layout
+type
+created_at | Post
+id
+club_id
+user_id
+name
+text
+is_pinned
+is_comments_open
+like_counter
+created_at |
+| Forum
+id
+club_id
+user_id
+name
+text
+is_comments_open
+like_counter
+is_closed
+created_at | Comment
+id
+post_id
+forum_id
+user_id
+text
+like_counter
+created_at | Membership
+id
+user_id
+club_id
+role
+joined_at
+status |
+---
+
+## Часть 5. Диаграмма вариантов использования (Use Case)
 
 ```mermaid
 flowchart TD
