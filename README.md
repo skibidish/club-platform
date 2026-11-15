@@ -98,56 +98,20 @@
     *   **Тогда** кнопка неактивна, отображается статус "Вы участник".
 
 ---
+## Часть 4. Модель данных (сущности)
 
-## Часть 4. Cписок сущностей
+| User | Club | Post | Forum | Comment | Membership |
+|---|---|---|---|---|---|
+| id | id | id | id | id | id |
+| display_name | user_id | club_id | club_id | post_id | user_id |
+| login | name | user_id | name | forum_id | club_id |
+| email | topic | name | text | user_id | role |
+| password_hash | description | text | is_comments_open | text | joined_at |
+| reg_at | layout | is_pinned | like_counter | like_counter | status |
+| | type | is_comments_open | is_closed | created_at | |
+| | created_at | like_counter | created_at | | |
+| | | created_at | | | |
 
-| User
-id
-display_name
-login
-email
-password_hash
-reg_at | Club
-id
-user_id
-name
-topic
-description
-layout
-type
-created_at | Post
-id
-club_id
-user_id
-name
-text
-is_pinned
-is_comments_open
-like_counter
-created_at |
-| Forum
-id
-club_id
-user_id
-name
-text
-is_comments_open
-like_counter
-is_closed
-created_at | Comment
-id
-post_id
-forum_id
-user_id
-text
-like_counter
-created_at | Membership
-id
-user_id
-club_id
-role
-joined_at
-status |
 ---
 
 ## Часть 5. Диаграмма вариантов использования (Use Case)
