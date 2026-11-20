@@ -171,53 +171,160 @@
   - Система возвращает ошибку «В клубе достигнут максимальный лимит участников».
 
 ---
-## Часть 4. Модель данных (сущности)
+## Часть 4. Модель данных
 
-| User | Club | Post | Forum | Comment | Membership |
-|---|---|---|---|---|---|
-| id | id | id | id | id | id |
-| display_name | user_id | club_id | club_id | post_id | user_id |
-| login | name | user_id | name | forum_id | club_id |
-| email | topic | name | text | user_id | role |
-| password_hash | description | text | is_comments_open | text | joined_at |
-| reg_at | layout | is_pinned | like_counter | like_counter | status |
-| | type | is_comments_open | is_closed | created_at | |
-| | created_at | like_counter | created_at | | |
-| | | created_at | | | |
+Типы указаны обобщённо (SQL-диалект независимый). «NOT NULL» — поле обязательное,
+«NULL» — необязательное. Удаление во всех сущностях мягкое (soft delete):
+запись не стирается физически, а помечается датой в deleted_at.
+
+### 4.1 user — пользователь
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| id | BIGINT, PK | NOT NULL | Уникальный идентификатор пользователя |
+| display_name | VARCHAR(100) | NOT NULL | Отображаемое имя |
+| login | VARCHAR(50), UNIQUE | NOT NULL | Логин для входа |
+| email | VARCHAR(255), UNIQUE | NOT NULL | Электронная почта |
+| password_hash | VARCHAR(255) | NOT NULL | Хеш пароля (открытый пароль не храним) |
+| reg_at | TIMESTAMP | NOT NULL | Дата и время регистрации |
+| deleted_at | TIMESTAMP | NULL | Признак удаления аккаунта (soft delete) |
+
+### 4.2 club — клуб
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| id | BIGINT, PK | NOT NULL | Уникальный идентификатор клуба |
+| owner_user_id | BIGINT, FK → user.id | NOT NULL | Пользователь-владелец клуба |
+| name | VARCHAR(100) | NOT NULL | Название клуба |
+| topic | VARCHAR(255) | NOT NULL | Тематика клуба |
+| description | TEXT | NULL | Описание клуба |
+| layout | VARCHAR(50) | NULL | Шаблон оформления страницы клуба |
+| type | VARCHAR(20) | NOT NULL | Тип клуба: public / closed |
+| created_at | TIMESTAMP | NOT NULL | Дата и время создания |
+| deleted_at | TIMESTAMP | NULL | Признак удаления клуба |
+
+### 4.3 post — пост
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| id | BIGINT, PK | NOT NULL | Уникальный идентификатор поста |
+| club_id | BIGINT, FK → club.id | NOT NULL | Клуб, в котором опубликован пост |
+| author_user_id | BIGINT, FK → user.id | NOT NULL | Автор поста |
+| name | VARCHAR(200) | NOT NULL | Заголовок поста |
+| text | TEXT | NOT NULL | Содержимое поста |
+| is_pinned | BOOLEAN | NOT NULL, default false | Закреплён ли пост |
+| is_comments_open | BOOLEAN | NOT NULL, default true | Открыты ли комментарии |
+| like_counter | INTEGER | NOT NULL, default 0 | Счётчик лайков |
+| created_at | TIMESTAMP | NOT NULL | Дата и время публикации |
+| deleted_at | TIMESTAMP | NULL | Признак удаления поста |
+
+### 4.4 forum — обсуждение (тред)
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| id | BIGINT, PK | NOT NULL | Уникальный идентификатор обсуждения |
+| club_id | BIGINT, FK → club.id | NOT NULL | Клуб, к которому относится обсуждение |
+| author_user_id | BIGINT, FK → user.id | NOT NULL | Создатель обсуждения |
+| name | VARCHAR(200) | NOT NULL | Заголовок обсуждения |
+| text | TEXT | NULL | Описание обсуждения / стартовый пост |
+| is_comments_open | BOOLEAN | NOT NULL, default true | Можно ли добавлять комментарии |
+| like_counter | INTEGER | NOT NULL, default 0 | Счётчик лайков |
+| is_closed | BOOLEAN | NOT NULL, default false | Закрыто ли обсуждение |
+| created_at | TIMESTAMP | NOT NULL | Дата и время создания |
+| deleted_at | TIMESTAMP | NULL | Признак удаления обсуждения |
+
+### 4.5 comment — комментарий
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| id | BIGINT, PK | NOT NULL | Уникальный идентификатор комментария |
+| post_id | BIGINT, FK → post.id | NULL | Пост-родитель (заполнен, если комментарий к посту) |
+| forum_id | BIGINT, FK → forum.id | NULL | Обсуждение-родитель (заполнено, если комментарий к форуму) |
+| author_user_id | BIGINT, FK → user.id | NOT NULL | Автор комментария |
+| text | TEXT | NOT NULL | Текст комментария |
+| like_counter | INTEGER | NOT NULL, default 0 | Счётчик лайков |
+| created_at | TIMESTAMP | NOT NULL | Дата и время создания |
+| deleted_at | TIMESTAMP | NULL | Признак удаления комментария |
+
+**Ограничение:** `CHECK ((post_id IS NULL) <> (forum_id IS NULL))` —
+ровно одно из двух полей-родителей заполнено: комментарий принадлежит
+либо посту, либо обсуждению, но не обоим сразу.
+
+### 4.6 club_user — связующая таблица участия (M:N club ↔ user)
+
+| Поле | Тип | Обязательность | Описание |
+|---|---|---|---|
+| club_id | BIGINT, FK → club.id, часть PK | NOT NULL | Клуб, в котором состоит пользователь |
+| user_id | BIGINT, FK → user.id, часть PK | NOT NULL | Пользователь-участник |
+| role | VARCHAR(20) | NOT NULL, default 'member' | Роль в клубе (member / moderator) |
+| joined_at | TIMESTAMP | NOT NULL | Дата и время вступления |
+| status | VARCHAR(20) | NOT NULL, default 'active' | Статус участия: active / left / banned |
+
+**Составной первичный ключ (club_id, user_id):** одна запись = один пользователь в одном клубе; 
+дубликаты участия невозможны на уровне БД. Роль «администратор клуба» не хранится здесь: 
+админ — это владелец через `club.owner_user_id`, чтобы не дублировать логику прав в двух местах.
+
+### 4.7 Диаграмма связей
+
+```mermaid
+erDiagram
+    USER ||--o{ CLUB : creates
+    USER ||--o{ POST : writes
+    USER ||--o{ FORUM : opens
+    USER ||--o{ COMMENT : writes
+    CLUB ||--o{ POST : contains
+    CLUB ||--o{ FORUM : contains
+    CLUB ||--o{ CLUB_USER : includes
+    USER ||--o{ CLUB_USER : joins
+    POST ||--o{ COMMENT : has
+    FORUM ||--o{ COMMENT : has
+```
 
 ---
 
 ## Часть 5. Диаграмма вариантов использования (Use Case)
 
 ```mermaid
-flowchart TD
-    subgraph "Платформа клубов (MVP)"
-        UC1["Поиск клуба по названию"]
-        UC2["Просмотр публичного клуба"]
-        UC3["Регистрация / Авторизация"]
-        UC4["Вступление в публичный клуб"]
-        UC5["Создание нового клуба"]
-        UC6["Управление настройками клуба"]
-        UC7["Создание постов/обсуждений"]
+flowchart LR
+    subgraph BC["Платформа клубов (MVP)"]
+        UC1(["Поиск клуба по названию"])
+        UC2(["Просмотр публичного клуба"])
+        UC3(["Регистрация"])
+        UC4(["Вход в систему"])
+        UC5(["Создание нового клуба"])
+        UC6(["Вступление в публичный клуб"])
+        UC7(["Выход из аккаунта"])
+        UC8(["Просмотр закрытого клуба (своего)"])
+        UC9(["Создание поста / обсуждения"])
+        UC10(["Комментирование постов и обсуждений"])
+        UC11(["Управление настройками клуба"])
+        UC12(["Удаление участников"])
+        UC13(["Создание ссылки-приглашения"])
     end
 
-    G(("Неавторизованный<br>пользователь"))
-    U(("Авторизованный<br>пользователь"))
-    M(("Участник<br>клуба"))
-    O(("Администратор<br>клуба"))
+    G(("Гость"))
+    A(("Новый пользователь"))
+    M(("Участник клуба"))
+    O(("Администратор клуба"))
 
-    G --> UC1
-    G --> UC2
-    G --> UC3
-    
-    U --> UC1
-    U --> UC2
-    U --> UC4
-    U --> UC5
-    
-    M --> UC7
-    
-    O --> UC6
-    O --> UC7
-    
-    UC4 -. "включает" .-> UC3
+    M -->|обобщение| A
+    O -->|обобщение| M
+
+    G --- UC1
+    G --- UC2
+    G --- UC3
+    G --- UC4
+
+    A --- UC1
+    A --- UC2
+    A --- UC5
+    A --- UC6
+    A --- UC7
+
+    M --- UC8
+    M --- UC9
+    M --- UC10
+
+    O --- UC11
+    O --- UC12
+    O --- UC13
